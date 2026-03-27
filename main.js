@@ -39,6 +39,7 @@ let placementTurnIdx = 0;
 let selectedUnit = null;
 let currentRemainingMove = 0;
 let hasAttackedThisTurn = false;
+let hasMovedThisTurn = false;
 
 // Youtube Player & Audio Engine
 let ytPlayer = null;
@@ -374,6 +375,10 @@ function handleCellClick(x, y) {
         }
 
         if (!clickedUnit) {
+            if (hasMovedThisTurn) {
+                log("이번 턴에 이미 이동했습니다. (이동은 한 턴에 1번만 가능합니다!)");
+                return;
+            }
             const d = dist(selectedUnit.x, selectedUnit.y, x, y);
             if (d > 0 && d <= currentRemainingMove) {
                 moveSelected(x, y, d);
@@ -384,7 +389,7 @@ function handleCellClick(x, y) {
 
     if (clickedUnit && clickedUnit.faction === currentTurn && !clickedUnit.isDead) {
         if (selectedUnit && selectedUnit !== clickedUnit) {
-            if (currentRemainingMove < selectedUnit.movement || hasAttackedThisTurn) {
+            if (hasMovedThisTurn || hasAttackedThisTurn) {
                 log("결정을 취소할 수 없습니다. 턴 종료를 눌러주세요.");
                 return;
             }
@@ -393,6 +398,7 @@ function handleCellClick(x, y) {
         selectedUnit = clickedUnit;
         currentRemainingMove = selectedUnit.movement;
         hasAttackedThisTurn = false;
+        hasMovedThisTurn = false;
         
         showInfo(selectedUnit);
         highlightOptions();
@@ -427,12 +433,14 @@ function moveSelected(x, y, distance) {
     board[y][x] = selectedUnit;
     
     currentRemainingMove -= distance;
-    log(`${selectedUnit.name} 이동 완료! (잔여 이동력: ${currentRemainingMove})`);
+    hasMovedThisTurn = true;
+    log(`${selectedUnit.name} 이동 완료! (남은 타격 사거리: ${currentRemainingMove})`);
     
     renderUnits();
     highlightOptions();
     
-    if (currentRemainingMove === 0 && hasAttackedThisTurn) {
+    if (currentRemainingMove === 0) {
+        log("이동거리를 모두 소모하여 턴이 자동으로 종료됩니다.");
         endTurn();
     }
 }
@@ -477,16 +485,16 @@ function attack(attacker, defender) {
     setTimeout(() => {
         renderUnits();
         highlightOptions();
-        
-        if (currentRemainingMove === 0 || hasAttackedThisTurn) {
-            endTurn();
-        }
+        log("공격을 마쳤으므로 턴이 자동으로 종료됩니다.");
+        endTurn();
     }, 450); // wait until animation finishes
 }
 
 function endTurn() {
     if(!selectedUnit) log("턴이 넘어갑니다.");
     selectedUnit = null;
+    hasMovedThisTurn = false;
+    hasAttackedThisTurn = false;
     clearHighlights();
     
     const catAlive = units.filter(u => u.faction === CAT && !u.isDead).length;
