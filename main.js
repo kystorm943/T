@@ -1,4 +1,4 @@
-const GRID_SIZE = 32;
+const GRID_SIZE = 24; // Scaled down grid for larger cells
 
 // Factions
 const CAT = 'cat';
@@ -15,7 +15,7 @@ const ASSETS = {
         infantry: { icon: 'pig_infantry.png', img: 'pig_infantry.png' },
         cavalry: { icon: 'pig_cavalry.png', img: 'pig_cavalry.png' },
         artillery: { icon: '🐷🏹', img: null },
-        musketeer: { icon: '🐷🔫', img: null } // fallback to prevent errors if pigs want it
+        musketeer: { icon: '🐷🔫', img: null } 
     }
 };
 
@@ -29,28 +29,108 @@ const UNIT_STATS = {
 let board = []; 
 let units = [];
 let currentTurn = CAT;
-let gameMode = 'PLACEMENT'; // PLACEMENT or BATTLE
+let gameMode = 'PLACEMENT'; 
 
-// Placement logic
 let placementPool = {};
 let selectedPlacementType = null;
 let placementFactions = [CAT, PIG];
-let placementTurnIdx = 0; // 0 = CAT, 1 = PIG
+let placementTurnIdx = 0; 
 
 let selectedUnit = null;
 let currentRemainingMove = 0;
 let hasAttackedThisTurn = false;
 
-// Youtube Player
+// Youtube Player & Audio Engine
 let ytPlayer = null;
+let bgmOn = true;
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('bgm-player', {
         height: '0',
         width: '0',
-        videoId: 'vOepN-8x8t0', // 신세계로부터 교향곡 4악장
+        videoId: 'vOepN-8x8t0',
         playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'vOepN-8x8t0' }
     });
+}
+
+document.getElementById('btn-toggle-bgm').addEventListener('click', (e) => {
+    bgmOn = !bgmOn;
+    e.target.textContent = bgmOn ? '🎵 BGM 끄기' : '🔇 BGM 켜기';
+    e.target.className = bgmOn ? '' : 'off';
+    
+    // Only play if battle has started
+    if(ytPlayer && ytPlayer.playVideo && ytPlayer.pauseVideo) {
+        if(bgmOn && gameMode === 'BATTLE') {
+            ytPlayer.playVideo();
+        } else {
+            ytPlayer.pauseVideo();
+        }
+    }
+});
+
+// Retro Web Audio SFX
+function playSFX(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    
+    if (type === 'infantry') {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(900, t);
+        osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.15);
+    }
+    else if (type === 'artillery') {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(100, t);
+        osc.frequency.exponentialRampToValueAtTime(10, t + 0.6);
+        gain.gain.setValueAtTime(1.0, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.6);
+    }
+    else if (type === 'cavalry') {
+        // Gallop 3 times
+        for(let i=0; i<3; i++) {
+            let osc = audioCtx.createOscillator();
+            let g = audioCtx.createGain();
+            osc.frequency.setValueAtTime(150, t + i*0.12);
+            g.gain.setValueAtTime(0.4, t + i*0.12);
+            g.gain.exponentialRampToValueAtTime(0.01, t + i*0.12 + 0.1);
+            osc.connect(g); g.connect(audioCtx.destination);
+            osc.start(t + i*0.12); osc.stop(t + i*0.12 + 0.1);
+        }
+        // Then slash
+        setTimeout(() => playSFX('infantry'), 350);
+    }
+    else if (type === 'musketeer') {
+        // Gunshot white noise
+        const bufSize = audioCtx.sampleRate * 0.25;
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        let noise = audioCtx.createBufferSource();
+        noise.buffer = buf;
+        
+        let pFilter = audioCtx.createBiquadFilter();
+        pFilter.type = 'bandpass';
+        pFilter.frequency.value = 800;
+        
+        let gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(1.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+        
+        noise.connect(pFilter); pFilter.connect(gain); gain.connect(audioCtx.destination);
+        noise.start(t);
+    }
 }
 
 function initGame() {
@@ -61,6 +141,11 @@ function initGame() {
     currentTurn = placementFactions[placementTurnIdx];
     selectedPlacementType = null;
     selectedUnit = null;
+    
+    const catAlive = document.getElementById('cat-count');
+    if(catAlive) { catAlive.textContent = "10"; }
+    const PigAlive = document.getElementById('pig-count');
+    if(PigAlive) { PigAlive.textContent = "10"; }
 
     placementPool = {
         cat: { musketeer: 3, infantry: 3, cavalry: 2, artillery: 2 },
@@ -114,7 +199,6 @@ function renderPlacementUI() {
 
     if (totalLeft === 0) {
         if (placementTurnIdx === 0) {
-            // Cats done, pig turn
             placementTurnIdx++;
             currentTurn = placementFactions[placementTurnIdx];
             selectedPlacementType = null;
@@ -122,11 +206,9 @@ function renderPlacementUI() {
             renderPlacementUI();
             updateUI();
         } else {
-            // Both done
             document.getElementById('placement-instruction').classList.add('hidden');
             document.getElementById('placement-pool').classList.add('hidden');
-            const btnStart = document.getElementById('btn-start-battle');
-            btnStart.classList.remove('hidden');
+            document.getElementById('btn-start-battle').classList.remove('hidden');
             clearHighlights();
         }
     }
@@ -137,7 +219,8 @@ function highlightPlacementZones() {
     const isCat = currentTurn === CAT;
     for (let y = 0; y < GRID_SIZE; y++) {
         for (let x = 0; x < GRID_SIZE; x++) {
-            let valid = isCat ? (x < 6) : (x >= GRID_SIZE - 6);
+            // Cat: Left 5 columns, Pig: Right 5 columns
+            let valid = isCat ? (x < 5) : (x >= GRID_SIZE - 5);
             if (valid && !board[y][x]) {
                 document.getElementById(`cell-${x}-${y}`).classList.add('highlight-placement');
             }
@@ -152,11 +235,14 @@ document.getElementById('btn-start-battle').addEventListener('click', () => {
     document.getElementById('placement-ui').classList.add('hidden');
     document.getElementById('battle-ui').classList.remove('hidden');
     
-    if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+    if (bgmOn && ytPlayer && typeof ytPlayer.playVideo === 'function') {
         ytPlayer.playVideo();
     }
     
-    log("전투 음악 재생... 전투를 시작합니다! 고양이 제국의 선공입니다.");
+    // Unlock Audio Context explicitly on user action
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    log("웅장한 BGM 재생... 전투를 시작합니다! 고양이 제국의 선공입니다.");
     updateUI();
 });
 
@@ -183,19 +269,26 @@ function renderUnits() {
     document.querySelectorAll('.unit-container').forEach(e => e.remove());
     units.forEach(unit => {
         const cell = document.getElementById(`cell-${unit.x}-${unit.y}`);
+        if (!cell) return;
         
         const uDiv = document.createElement('div');
         uDiv.className = `unit unit-container ${unit.isDead ? 'incapacitated' : ''} ${selectedUnit === unit ? 'selected' : ''}`;
+        uDiv.id = `unit-${unit.id}`;
         
         if (!unit.isDead && gameMode === 'BATTLE') {
             const hpDiv = document.createElement('div');
             hpDiv.className = 'unit-hp';
+            
             const hpFill = document.createElement('div');
             hpFill.className = 'unit-hp-fill';
             hpFill.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`;
-            if (unit.faction === CAT) hpFill.style.backgroundColor = '#3498db';
-            else hpFill.style.backgroundColor = '#e74c3c';
+            
+            const hpText = document.createElement('div');
+            hpText.className = 'unit-hp-text';
+            hpText.textContent = `${unit.hp}`;
+            
             hpDiv.appendChild(hpFill);
+            hpDiv.appendChild(hpText);
             uDiv.appendChild(hpDiv);
         }
 
@@ -229,11 +322,10 @@ function handleCellClick(x, y) {
         if (!selectedPlacementType) return;
         
         let valid = false;
-        if (currentTurn === CAT && x < 6) valid = true;
-        if (currentTurn === PIG && x >= GRID_SIZE - 6) valid = true;
+        if (currentTurn === CAT && x < 5) valid = true;
+        if (currentTurn === PIG && x >= GRID_SIZE - 5) valid = true;
         
         if (valid && !board[y][x]) {
-            // Place unit
             let pType = selectedPlacementType;
             let unit = {
                 id: `${currentTurn}_${pType}_${Date.now()}`,
@@ -335,7 +427,7 @@ function moveSelected(x, y, distance) {
     board[y][x] = selectedUnit;
     
     currentRemainingMove -= distance;
-    log(`${selectedUnit.name} 이동 완료!`);
+    log(`${selectedUnit.name} 이동 완료! (잔여 이동력: ${currentRemainingMove})`);
     
     renderUnits();
     highlightOptions();
@@ -350,6 +442,30 @@ function attack(attacker, defender) {
     hasAttackedThisTurn = true;
     log(`⚔️ ${attacker.name}(이)가 ${defender.name} 공격! (-${attacker.damage})`);
     
+    // Play SFX
+    playSFX(attacker.type);
+
+    // Apply animation CSS class temporarily
+    const attackerEl = document.getElementById(`unit-${attacker.id}`);
+    const defenderEl = document.getElementById(`unit-${defender.id}`);
+    
+    // Directional lunge
+    if(attackerEl) {
+        const dx = defender.x - attacker.x;
+        const dy = defender.y - attacker.y;
+        if(Math.abs(dx) > Math.abs(dy)) {
+            attackerEl.classList.add(dx > 0 ? 'anim-lunge-right' : 'anim-lunge-left');
+        } else {
+            attackerEl.classList.add(dy > 0 ? 'anim-lunge-down' : 'anim-lunge-up');
+        }
+        setTimeout(() => attackerEl.className = attackerEl.className.replace(/anim-lunge-[a-z]+/g, '').trim(), 300);
+    }
+    
+    if(defenderEl) {
+        defenderEl.classList.add('anim-damage');
+        setTimeout(() => defenderEl.classList.remove('anim-damage'), 400);
+    }
+
     if (defender.hp <= 0) {
         defender.hp = 0;
         defender.isDead = true;
@@ -357,16 +473,19 @@ function attack(attacker, defender) {
         log(`💀 ${defender.name} 파괴됨!`);
     }
     
-    renderUnits();
-    highlightOptions();
-    
-    if (currentRemainingMove === 0 || hasAttackedThisTurn) {
-        endTurn();
-    }
+    // Delay render briefly so animation plays properly
+    setTimeout(() => {
+        renderUnits();
+        highlightOptions();
+        
+        if (currentRemainingMove === 0 || hasAttackedThisTurn) {
+            endTurn();
+        }
+    }, 450); // wait until animation finishes
 }
 
 function endTurn() {
-    if(!selectedUnit) log("턴이 종료되었습니다.");
+    if(!selectedUnit) log("턴이 넘어갑니다.");
     selectedUnit = null;
     clearHighlights();
     
@@ -440,9 +559,10 @@ document.getElementById('btn-restart').addEventListener('click', () => {
     document.getElementById('placement-instruction').classList.remove('hidden');
     document.getElementById('placement-pool').classList.remove('hidden');
     document.getElementById('btn-start-battle').classList.add('hidden');
+    const loglist = document.getElementById('battle-log');
+    loglist.innerHTML = '';
     
     initGame();
 });
 
-// Initialize on load
 initGame();

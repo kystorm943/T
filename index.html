@@ -38,11 +38,11 @@
                     </div>
                     <p class="hp-text">HP: <span id="info-hp">100</span> / 100</p>
                     <p class="stat-text">🗡️ 공격력: <span id="info-damage">0</span></p>
-                    <p class="stat-text">👟 이동 및 사거리: <span id="info-movement">0</span></p>
+                    <p class="stat-text">👟 이동/사거리: <span id="info-movement">0</span></p>
                 </div>
                 
                 <div id="controls">
-                    <button id="btn-end-turn">턴 종료</button>
+                    <button id="btn-end-turn">스킵 / 턴 종료</button>
                 </div>
             </div>
 
@@ -50,6 +50,10 @@
                 <ul id="battle-log">
                     <li>유닛 배치를 먼저 진행해 주세요.</li>
                 </ul>
+            </div>
+            
+            <div class="audio-controls">
+                <button id="btn-toggle-bgm">🎵 BGM 끄기</button>
             </div>
         </aside>
         
@@ -66,7 +70,7 @@
         </div>
     </div>
 
-    <div id="bgm-player"></div>
+    <div id="bgm-player" style="display:none;"></div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="main.js"></script>
