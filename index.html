@@ -13,29 +13,42 @@
             <h1>고양이 🐱<br><small>vs</small><br>돼지 🐷</h1>
             <div id="turn-indicator" class="turn-cat">고양이 제국 턴</div>
             
-            <div class="stats-box">
-                <div class="team-stats">
-                    <span>🐱 생존 유닛: <span id="cat-count">10</span></span>
-                    <span>🐷 생존 유닛: <span id="pig-count">10</span></span>
+            <div id="placement-ui">
+                <h3>배치할 유닛 선택</h3>
+                <div id="placement-pool"></div>
+                <p id="placement-instruction">왼쪽 영역에 유닛을 배치하세요.</p>
+                <button id="btn-start-battle" class="hidden">전투 시작! ⚔️</button>
+            </div>
+
+            <div id="battle-ui" class="hidden">
+                <div class="stats-box">
+                    <div class="team-stats">
+                        <span>🐱 생존: <span id="cat-count">10</span></span>
+                        <span>🐷 생존: <span id="pig-count">10</span></span>
+                    </div>
+                </div>
+
+                <div id="unit-info" class="info-card hidden">
+                    <div class="info-header">
+                        <img id="info-icon" src="" alt="icon">
+                        <h3 id="info-name">-</h3>
+                    </div>
+                    <div class="hp-bar-container">
+                        <div id="info-hp-bar" class="hp-bar-fill"></div>
+                    </div>
+                    <p class="hp-text">HP: <span id="info-hp">100</span> / 100</p>
+                    <p class="stat-text">🗡️ 공격력: <span id="info-damage">0</span></p>
+                    <p class="stat-text">👟 이동 및 사거리: <span id="info-movement">0</span></p>
+                </div>
+                
+                <div id="controls">
+                    <button id="btn-end-turn">턴 종료</button>
                 </div>
             </div>
 
-            <div id="unit-info" class="info-card hidden">
-                <div class="info-header">
-                    <img id="info-icon" src="" alt="icon">
-                    <h3 id="info-name">-</h3>
-                </div>
-                <div class="hp-bar-container">
-                    <div id="info-hp-bar" class="hp-bar-fill"></div>
-                </div>
-                <p class="hp-text">HP: <span id="info-hp">100</span> / 100</p>
-                <p class="stat-text">🗡️ 공격력: <span id="info-damage">0</span></p>
-                <p class="stat-text">👟 이동력: <span id="info-movement">0</span></p>
-            </div>
-            
             <div class="log-section">
                 <ul id="battle-log">
-                    <li>전투가 시작되었습니다!</li>
+                    <li>유닛 배치를 먼저 진행해 주세요.</li>
                 </ul>
             </div>
         </aside>
@@ -53,6 +66,9 @@
         </div>
     </div>
 
+    <div id="bgm-player"></div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="main.js"></script>
 </body>
 </html>

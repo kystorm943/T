@@ -4,18 +4,18 @@ const GRID_SIZE = 32;
 const CAT = 'cat';
 const PIG = 'pig';
 
-// Assets mapping (fallback to emojis if images didn't generate)
 const ASSETS = {
     cat: {
         infantry: { icon: '🐱🗡️', img: null },
         cavalry: { icon: '🐱🐎', img: null },
         artillery: { icon: 'cat_artillery.png', img: 'cat_artillery.png' },
-        musketeer: { icon: '🐱🧨', img: null } // 조총병
+        musketeer: { icon: '🐱🧨', img: null }
     },
     pig: {
         infantry: { icon: 'pig_infantry.png', img: 'pig_infantry.png' },
         cavalry: { icon: 'pig_cavalry.png', img: 'pig_cavalry.png' },
-        artillery: { icon: '🐷🏹', img: null } 
+        artillery: { icon: '🐷🏹', img: null },
+        musketeer: { icon: '🐷🔫', img: null } // fallback to prevent errors if pigs want it
     }
 };
 
@@ -23,79 +23,142 @@ const UNIT_STATS = {
     infantry: { name: '보병', hp: 100, damage: 35, movement: 2 },
     cavalry: { name: '기병', hp: 100, damage: 25, movement: 5 },
     artillery: { name: '포병', hp: 100, damage: 45, movement: 3 },
-    musketeer: { name: '조총병', hp: 80, damage: 55, movement: 3 } // 조총병 특성
+    musketeer: { name: '조총병', hp: 80, damage: 55, movement: 3 }
 };
 
 let board = []; 
 let units = [];
 let currentTurn = CAT;
+let gameMode = 'PLACEMENT'; // PLACEMENT or BATTLE
+
+// Placement logic
+let placementPool = {};
+let selectedPlacementType = null;
+let placementFactions = [CAT, PIG];
+let placementTurnIdx = 0; // 0 = CAT, 1 = PIG
+
 let selectedUnit = null;
 let currentRemainingMove = 0;
 let hasAttackedThisTurn = false;
 
+// Youtube Player
+let ytPlayer = null;
+
+function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('bgm-player', {
+        height: '0',
+        width: '0',
+        videoId: 'vOepN-8x8t0', // 신세계로부터 교향곡 4악장
+        playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'vOepN-8x8t0' }
+    });
+}
+
 function initGame() {
     board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
     units = [];
-    currentTurn = CAT;
+    gameMode = 'PLACEMENT';
+    placementTurnIdx = 0;
+    currentTurn = placementFactions[placementTurnIdx];
+    selectedPlacementType = null;
     selectedUnit = null;
-    currentRemainingMove = 0;
-    hasAttackedThisTurn = false;
-    
-    spawnTeam(CAT, 0);
-    spawnTeam(PIG, GRID_SIZE - 2);
+
+    placementPool = {
+        cat: { musketeer: 3, infantry: 3, cavalry: 2, artillery: 2 },
+        pig: { infantry: 4, cavalry: 3, artillery: 3 }
+    };
 
     renderBoard();
     updateUI();
-    log("전투가 시작되었습니다! 고양이 제국의 선공입니다.");
+    document.getElementById('battle-log').innerHTML = '<li>진영 왼쪽에 유닛을 배치해주세요!</li>';
+    renderPlacementUI();
 }
 
-function spawnTeam(faction, startCol) {
-    let specs = [];
-    if (faction === CAT) {
-        specs = [
-            { type: 'cavalry', count: 2 },
-            { type: 'artillery', count: 2 },
-            { type: 'infantry', count: 3 },
-            { type: 'musketeer', count: 3 }
-        ];
-    } else {
-        specs = [
-            { type: 'cavalry', count: 3 },
-            { type: 'artillery', count: 3 },
-            { type: 'infantry', count: 4 }
-        ];
+function renderPlacementUI() {
+    const pool = placementPool[currentTurn];
+    const container = document.getElementById('placement-pool');
+    container.innerHTML = '';
+    
+    let totalLeft = 0;
+
+    for (const [type, count] of Object.entries(pool)) {
+        totalLeft += count;
+        const item = document.createElement('div');
+        item.className = 'placement-item';
+        if (count === 0) item.classList.add('disabled');
+        if (selectedPlacementType === type) item.classList.add('selected');
+        
+        const asset = ASSETS[currentTurn][type];
+        if (asset.img) {
+            const img = document.createElement('img');
+            img.src = asset.img;
+            item.appendChild(img);
+        } else {
+            item.textContent = asset.icon;
+        }
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'placement-count';
+        countSpan.textContent = count;
+        item.appendChild(countSpan);
+
+        item.addEventListener('click', () => {
+            if (count > 0) {
+                selectedPlacementType = type;
+                renderPlacementUI();
+                highlightPlacementZones();
+            }
+        });
+
+        container.appendChild(item);
+    }
+
+    if (totalLeft === 0) {
+        if (placementTurnIdx === 0) {
+            // Cats done, pig turn
+            placementTurnIdx++;
+            currentTurn = placementFactions[placementTurnIdx];
+            selectedPlacementType = null;
+            log("고양이 제국 배치 완료! 이제 돼지 제국이 진영 오른쪽에 배치합니다.");
+            renderPlacementUI();
+            updateUI();
+        } else {
+            // Both done
+            document.getElementById('placement-instruction').classList.add('hidden');
+            document.getElementById('placement-pool').classList.add('hidden');
+            const btnStart = document.getElementById('btn-start-battle');
+            btnStart.classList.remove('hidden');
+            clearHighlights();
+        }
+    }
+}
+
+function highlightPlacementZones() {
+    clearHighlights();
+    const isCat = currentTurn === CAT;
+    for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+            let valid = isCat ? (x < 6) : (x >= GRID_SIZE - 6);
+            if (valid && !board[y][x]) {
+                document.getElementById(`cell-${x}-${y}`).classList.add('highlight-placement');
+            }
+        }
+    }
+}
+
+document.getElementById('btn-start-battle').addEventListener('click', () => {
+    gameMode = 'BATTLE';
+    currentTurn = CAT;
+    
+    document.getElementById('placement-ui').classList.add('hidden');
+    document.getElementById('battle-ui').classList.remove('hidden');
+    
+    if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+        ytPlayer.playVideo();
     }
     
-    let spawnPoints = [];
-    for(let x=startCol; x < startCol + 2; x++) {
-        for(let y=8; y < 24; y += 1) { 
-            spawnPoints.push({x, y});
-        }
-    }
-    spawnPoints.sort(() => Math.random() - 0.5);
-
-    let idx = 0;
-    for (let spec of specs) {
-        for (let i = 0; i < spec.count; i++) {
-            let pt = spawnPoints[idx++];
-            let unit = {
-                id: `${faction}_${spec.type}_${i}`,
-                faction: faction,
-                type: spec.type,
-                name: `${faction === CAT ? '고양이' : '돼지'} ${UNIT_STATS[spec.type].name}`,
-                maxHp: UNIT_STATS[spec.type].hp,
-                hp: UNIT_STATS[spec.type].hp,
-                damage: UNIT_STATS[spec.type].damage,
-                movement: UNIT_STATS[spec.type].movement,
-                x: pt.x,
-                y: pt.y,
-                isDead: false
-            };
-            units.push(unit);
-            board[pt.y][pt.x] = unit;
-        }
-    }
-}
+    log("전투 음악 재생... 전투를 시작합니다! 고양이 제국의 선공입니다.");
+    updateUI();
+});
 
 function renderBoard() {
     const container = document.getElementById('game-board');
@@ -124,7 +187,7 @@ function renderUnits() {
         const uDiv = document.createElement('div');
         uDiv.className = `unit unit-container ${unit.isDead ? 'incapacitated' : ''} ${selectedUnit === unit ? 'selected' : ''}`;
         
-        if (!unit.isDead) {
+        if (!unit.isDead && gameMode === 'BATTLE') {
             const hpDiv = document.createElement('div');
             hpDiv.className = 'unit-hp';
             const hpFill = document.createElement('div');
@@ -153,8 +216,7 @@ function renderUnits() {
 
 function clearHighlights() {
     document.querySelectorAll('.cell').forEach(c => {
-        c.classList.remove('highlight-move');
-        c.classList.remove('highlight-attack');
+        c.className = c.className.replace(/highlight-[a-z]+/g, '').trim();
     });
 }
 
@@ -163,10 +225,47 @@ function dist(x1, y1, x2, y2) {
 }
 
 function handleCellClick(x, y) {
+    if (gameMode === 'PLACEMENT') {
+        if (!selectedPlacementType) return;
+        
+        let valid = false;
+        if (currentTurn === CAT && x < 6) valid = true;
+        if (currentTurn === PIG && x >= GRID_SIZE - 6) valid = true;
+        
+        if (valid && !board[y][x]) {
+            // Place unit
+            let pType = selectedPlacementType;
+            let unit = {
+                id: `${currentTurn}_${pType}_${Date.now()}`,
+                faction: currentTurn,
+                type: pType,
+                name: `${currentTurn === CAT ? '고양이' : '돼지'} ${UNIT_STATS[pType].name}`,
+                maxHp: UNIT_STATS[pType].hp,
+                hp: UNIT_STATS[pType].hp,
+                damage: UNIT_STATS[pType].damage,
+                movement: UNIT_STATS[pType].movement,
+                x: x,
+                y: y,
+                isDead: false
+            };
+            units.push(unit);
+            board[y][x] = unit;
+            
+            placementPool[currentTurn][pType]--;
+            if (placementPool[currentTurn][pType] === 0) {
+                selectedPlacementType = null;
+                clearHighlights();
+            }
+            renderPlacementUI();
+            renderUnits();
+        }
+        return;
+    }
+
+    // BATTLE MODE
     let clickedUnit = board[y][x];
 
     if (selectedUnit && !selectedUnit.isDead) {
-        // Attack enemy
         if (clickedUnit && clickedUnit.faction !== currentTurn && !clickedUnit.isDead) {
             if (!hasAttackedThisTurn) {
                 const d = dist(selectedUnit.x, selectedUnit.y, x, y);
@@ -174,7 +273,7 @@ function handleCellClick(x, y) {
                     attack(selectedUnit, clickedUnit);
                     return;
                 } else {
-                    log("공격 범위를 벗어났습니다! (남은 이동력이 공격 사거리입니다)");
+                    log("공격 범위를 벗어났습니다!");
                 }
             } else {
                 log("이번 턴에 이미 공격했습니다.");
@@ -182,7 +281,6 @@ function handleCellClick(x, y) {
             return;
         }
 
-        // Move to empty cell
         if (!clickedUnit) {
             const d = dist(selectedUnit.x, selectedUnit.y, x, y);
             if (d > 0 && d <= currentRemainingMove) {
@@ -192,12 +290,10 @@ function handleCellClick(x, y) {
         }
     }
 
-    // Select friendly unit
     if (clickedUnit && clickedUnit.faction === currentTurn && !clickedUnit.isDead) {
         if (selectedUnit && selectedUnit !== clickedUnit) {
-            // Cannot change unit if already moved/attacked
             if (currentRemainingMove < selectedUnit.movement || hasAttackedThisTurn) {
-                log("이미 이번 턴에 행동을 시작한 유닛이 있습니다. 턴 종료를 눌러주세요.");
+                log("결정을 취소할 수 없습니다. 턴 종료를 눌러주세요.");
                 return;
             }
         }
@@ -209,7 +305,7 @@ function handleCellClick(x, y) {
         showInfo(selectedUnit);
         highlightOptions();
         renderUnits();
-        log(`${selectedUnit.name} 선택됨 (이동력: ${currentRemainingMove})`);
+        log(`${selectedUnit.name} 선택됨`);
         return;
     }
 }
@@ -239,7 +335,7 @@ function moveSelected(x, y, distance) {
     board[y][x] = selectedUnit;
     
     currentRemainingMove -= distance;
-    log(`${selectedUnit.name} 이동! (남은 이동 및 공격 사거리: ${currentRemainingMove})`);
+    log(`${selectedUnit.name} 이동 완료!`);
     
     renderUnits();
     highlightOptions();
@@ -252,13 +348,13 @@ function moveSelected(x, y, distance) {
 function attack(attacker, defender) {
     defender.hp -= attacker.damage;
     hasAttackedThisTurn = true;
-    log(`⚔️ ${attacker.name}이(가) ${defender.name}을(를) 공격! (-${attacker.damage} HP)`);
+    log(`⚔️ ${attacker.name}(이)가 ${defender.name} 공격! (-${attacker.damage})`);
     
     if (defender.hp <= 0) {
         defender.hp = 0;
         defender.isDead = true;
         board[defender.y][defender.x] = null; 
-        log(`💀 ${defender.name}이(가) 쓰러졌습니다!`);
+        log(`💀 ${defender.name} 파괴됨!`);
     }
     
     renderUnits();
@@ -270,16 +366,10 @@ function attack(attacker, defender) {
 }
 
 function endTurn() {
-    if(!selectedUnit) {
-        log("선택된 유닛 없이 턴을 종료합니다.");
-    } else {
-        log(`${selectedUnit.name}의 행동 종료.`);
-    }
-
+    if(!selectedUnit) log("턴이 종료되었습니다.");
     selectedUnit = null;
     clearHighlights();
     
-    // Check win
     const catAlive = units.filter(u => u.faction === CAT && !u.isDead).length;
     const pigAlive = units.filter(u => u.faction === PIG && !u.isDead).length;
     
@@ -296,10 +386,18 @@ document.getElementById('btn-end-turn').addEventListener('click', endTurn);
 function gameOver(message) {
     document.getElementById('modal-overlay').classList.remove('hidden');
     document.getElementById('winner-text').textContent = message;
+    if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
 }
 
 function updateUI() {
     const indicator = document.getElementById('turn-indicator');
+    
+    if (gameMode === 'PLACEMENT') {
+        indicator.textContent = currentTurn === CAT ? "배치: 고양이 제국 ✨" : "배치: 돼지 제국 ✨";
+        indicator.className = 'turn-placement';
+        return;
+    }
+
     if (currentTurn === CAT) {
         indicator.textContent = "고양이 제국 턴 🐱";
         indicator.className = 'turn-cat';
@@ -336,7 +434,15 @@ function log(msg) {
 
 document.getElementById('btn-restart').addEventListener('click', () => {
     document.getElementById('modal-overlay').classList.add('hidden');
+    
+    document.getElementById('battle-ui').classList.add('hidden');
+    document.getElementById('placement-ui').classList.remove('hidden');
+    document.getElementById('placement-instruction').classList.remove('hidden');
+    document.getElementById('placement-pool').classList.remove('hidden');
+    document.getElementById('btn-start-battle').classList.add('hidden');
+    
     initGame();
 });
 
+// Initialize on load
 initGame();
