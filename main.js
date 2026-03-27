@@ -21,11 +21,18 @@ const ASSETS = {
 };
 
 const UNIT_STATS = {
-    infantry: { name: '보병', hp: 100, damage: 35, movement: 2 },
-    cavalry: { name: '기병', hp: 100, damage: 25, movement: 5 },
-    artillery: { name: '포병', hp: 100, damage: 45, movement: 3 },
-    musketeer: { name: '조총병', hp: 80, damage: 55, movement: 3 },
-    crossbowman: { name: '석궁수', hp: 85, damage: 50, movement: 3 }
+    cat: {
+        infantry: { name: '보병', hp: 100, damage: 35, movement: 4 },
+        cavalry: { name: '기병', hp: 100, damage: 25, movement: 5 },
+        artillery: { name: '포병', hp: 100, damage: 55, movement: 3 },
+        musketeer: { name: '조총병', hp: 80, damage: 40, movement: 3 }
+    },
+    pig: {
+        infantry: { name: '보병', hp: 100, damage: 35, movement: 4 },
+        cavalry: { name: '기병', hp: 100, damage: 25, movement: 5 },
+        artillery: { name: '포병', hp: 100, damage: 50, movement: 3 },
+        crossbowman: { name: '석궁수', hp: 85, damage: 45, movement: 3 }
+    }
 };
 
 let board = []; 
@@ -355,11 +362,11 @@ function handleCellClick(x, y) {
                 id: `${currentTurn}_${pType}_${Date.now()}`,
                 faction: currentTurn,
                 type: pType,
-                name: `${currentTurn === CAT ? '고양이' : '돼지'} ${UNIT_STATS[pType].name}`,
-                maxHp: UNIT_STATS[pType].hp,
-                hp: UNIT_STATS[pType].hp,
-                damage: UNIT_STATS[pType].damage,
-                movement: UNIT_STATS[pType].movement,
+                name: `${currentTurn === CAT ? '고양이' : '돼지'} ${UNIT_STATS[currentTurn][pType].name}`,
+                maxHp: UNIT_STATS[currentTurn][pType].hp,
+                hp: UNIT_STATS[currentTurn][pType].hp,
+                damage: UNIT_STATS[currentTurn][pType].damage,
+                movement: UNIT_STATS[currentTurn][pType].movement,
                 x: x,
                 y: y,
                 isDead: false
