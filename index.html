@@ -3,42 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>무지개 구구단 팡팡! 🌈</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>고양이 제국 vs 돼지 제국 ⚔️</title>
     <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="particles"></div>
-    <div class="game-container">
-        <img src="cat.png" id="cat-mascot" alt="Cute Cat Mascot">
-        <header>
-            <h1 class="title-text">🌈 무지개 구구단 팡팡! ⭐</h1>
-            <div class="score-board">
-                <span>점수: <span id="score">0</span> 🍓</span>
-                <span>최고 점수: <span id="high-score">0</span> 🏆</span>
-            </div>
-        </header>
-
-        <main id="game-board">
-            <div id="question-box" class="bounce-in">
-                <div id="question">2 × 3 = ?</div>
+    <div class="game-layout">
+        <aside class="side-panel">
+            <h1>고양이 🐱<br><small>vs</small><br>돼지 🐷</h1>
+            <div id="turn-indicator" class="turn-cat">고양이 제국 턴</div>
+            
+            <div class="stats-box">
+                <div class="team-stats">
+                    <span>🐱 생존 유닛: <span id="cat-count">10</span></span>
+                    <span>🐷 생존 유닛: <span id="pig-count">10</span></span>
+                </div>
             </div>
 
-            <div class="answers-grid">
-                <button class="answer-btn" id="btn-0" style="background-color: #ff5e5e;">6</button>
-                <button class="answer-btn" id="btn-1" style="background-color: #ffb833;">8</button>
-                <button class="answer-btn" id="btn-2" style="background-color: #4cd137;">10</button>
-                <button class="answer-btn" id="btn-3" style="background-color: #00a8ff;">12</button>
+            <div id="unit-info" class="info-card hidden">
+                <div class="info-header">
+                    <img id="info-icon" src="" alt="icon">
+                    <h3 id="info-name">-</h3>
+                </div>
+                <div class="hp-bar-container">
+                    <div id="info-hp-bar" class="hp-bar-fill"></div>
+                </div>
+                <p class="hp-text">HP: <span id="info-hp">100</span> / 100</p>
+                <p class="stat-text">🗡️ 공격력: <span id="info-damage">0</span></p>
+                <p class="stat-text">👟 이동력: <span id="info-movement">0</span></p>
             </div>
-        </main>
+            
+            <div class="log-section">
+                <ul id="battle-log">
+                    <li>전투가 시작되었습니다!</li>
+                </ul>
+            </div>
+        </aside>
         
-        <div id="feedback-emoji" class="hidden"></div>
+        <main class="board-container">
+            <div id="game-board"></div>
+        </main>
     </div>
 
-    <!-- Celebration Emojis Container -->
-    <div id="celebration-container"></div>
+    <!-- Game Over Modal -->
+    <div id="modal-overlay" class="hidden">
+        <div id="game-over-modal">
+            <h2 id="winner-text">승리!</h2>
+            <button id="btn-restart">다시 시작하기</button>
+        </div>
+    </div>
 
     <script src="main.js"></script>
 </body>
