@@ -14,7 +14,7 @@ const ASSETS = {
     pig: {
         infantry: { icon: 'pig_infantry.png', img: 'pig_infantry.png' },
         cavalry: { icon: 'pig_cavalry.png', img: 'pig_cavalry.png' },
-        artillery: { icon: '🐷🏹', img: null },
+        artillery: { icon: 'pig_artillery.png', img: 'pig_artillery.png' },
         musketeer: { icon: '🐷🔫', img: null } 
     }
 };
