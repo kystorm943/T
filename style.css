@@ -138,11 +138,11 @@ body {
     flex-grow: 1; background-color: #1a252f; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: auto; display: flex; justify-content: center; align-items: center;
 }
 
-/* 24x24 Scale - Bigger cells */
+/* 22x22 Scale - Bigger cells */
 #game-board {
     display: grid;
-    grid-template-columns: repeat(24, 45px);
-    grid-template-rows: repeat(24, 45px);
+    grid-template-columns: repeat(22, 52px);
+    grid-template-rows: repeat(22, 52px);
     gap: 1px;
     background-color: #34495e;
     border: 4px solid #f1c40f; /* Make board pop out */
@@ -150,8 +150,8 @@ body {
 
 .cell {
     background-color: #e0e6ed; /* Brighter cell */
-    width: 45px;
-    height: 45px;
+    width: 52px;
+    height: 52px;
     position: relative;
     cursor: pointer;
     border: 1px solid rgba(0,0,0,0.15); /* Explicit separator */
@@ -171,7 +171,13 @@ body {
 .unit {
     width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 10;
 }
-.unit img { width: 95%; height: 95%; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5)); }
+.unit img { 
+    width: 95%; 
+    height: 95%; 
+    object-fit: contain; 
+    filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
+    mix-blend-mode: multiply; 
+}
 .unit-emoji { font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
 
 .unit.selected {

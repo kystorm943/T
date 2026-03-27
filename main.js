@@ -1,4 +1,4 @@
-const GRID_SIZE = 24; // Scaled down grid for larger cells
+const GRID_SIZE = 22; // 22x22 smaller grid with much larger cells
 
 // Factions
 const CAT = 'cat';
@@ -15,7 +15,8 @@ const ASSETS = {
         infantry: { icon: 'pig_infantry.png', img: 'pig_infantry.png' },
         cavalry: { icon: 'pig_cavalry.png', img: 'pig_cavalry.png' },
         artillery: { icon: 'pig_artillery.png', img: 'pig_artillery.png' },
-        musketeer: { icon: '🐷🔫', img: null } 
+        musketeer: { icon: '🐷🔫', img: null },
+        crossbowman: { icon: 'pig_crossbowman.png', img: 'pig_crossbowman.png' }
     }
 };
 
@@ -23,7 +24,8 @@ const UNIT_STATS = {
     infantry: { name: '보병', hp: 100, damage: 35, movement: 2 },
     cavalry: { name: '기병', hp: 100, damage: 25, movement: 5 },
     artillery: { name: '포병', hp: 100, damage: 45, movement: 3 },
-    musketeer: { name: '조총병', hp: 80, damage: 55, movement: 3 }
+    musketeer: { name: '조총병', hp: 80, damage: 55, movement: 3 },
+    crossbowman: { name: '석궁수', hp: 85, damage: 50, movement: 3 }
 };
 
 let board = []; 
@@ -132,6 +134,27 @@ function playSFX(type) {
         noise.connect(pFilter); pFilter.connect(gain); gain.connect(audioCtx.destination);
         noise.start(t);
     }
+    else if (type === 'crossbowman') {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, t);
+        osc.frequency.exponentialRampToValueAtTime(800, t + 0.1);
+        gain.gain.setValueAtTime(1.0, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.1);
+        
+        let osc2 = audioCtx.createOscillator();
+        let gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(300, t + 0.1);
+        osc2.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+        gain2.gain.setValueAtTime(0.5, t + 0.1);
+        gain2.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+        osc2.connect(gain2); gain2.connect(audioCtx.destination);
+        osc2.start(t + 0.1); osc2.stop(t + 0.2);
+    }
 }
 
 function initGame() {
@@ -150,7 +173,7 @@ function initGame() {
 
     placementPool = {
         cat: { musketeer: 3, infantry: 3, cavalry: 2, artillery: 2 },
-        pig: { infantry: 4, cavalry: 3, artillery: 3 }
+        pig: { infantry: 3, cavalry: 2, artillery: 2, crossbowman: 3 }
     };
 
     renderBoard();
