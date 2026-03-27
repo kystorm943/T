@@ -6,17 +6,16 @@ const PIG = 'pig';
 
 const ASSETS = {
     cat: {
-        infantry: { icon: 'cat.png', img: 'cat.png' },
+        infantry: { icon: 'cat_infantry_v2.png', img: 'cat_infantry_v2.png' },
         cavalry: { icon: 'cat_cavalry.png', img: 'cat_cavalry.png' },
         artillery: { icon: 'cat_artillery.png', img: 'cat_artillery.png' },
-        musketeer: { icon: 'cat_musketeer.png', img: 'cat_musketeer.png' }
+        musketeer: { icon: 'cat_musketeer_v2.png', img: 'cat_musketeer_v2.png' }
     },
     pig: {
         infantry: { icon: 'pig_infantry.png', img: 'pig_infantry.png' },
         cavalry: { icon: 'pig_cavalry.png', img: 'pig_cavalry.png' },
-        artillery: { icon: 'pig_artillery.png', img: 'pig_artillery.png' },
-        musketeer: { icon: '🐷🔫', img: null },
-        crossbowman: { icon: 'pig_crossbowman.png', img: 'pig_crossbowman.png' }
+        artillery: { icon: 'pig_artillery_v2.png', img: 'pig_artillery_v2.png' },
+        crossbowman: { icon: 'pig_crossbowman_v2.png', img: 'pig_crossbowman_v2.png' }
     }
 };
 
