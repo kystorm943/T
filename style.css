@@ -182,3 +182,29 @@ header {
     0% { top: -10%; opacity: 1; }
     100% { top: 110%; opacity: 0; transform: rotate(360deg); }
 }
+
+/* Cat Mascot */
+#cat-mascot {
+    position: absolute;
+    top: -80px;
+    right: -40px;
+    width: 140px;
+    height: auto;
+    z-index: 20;
+    animation: cat-float 4s ease-in-out infinite;
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1));
+}
+
+@keyframes cat-float {
+    0% { transform: translateY(0px) rotate(-5deg); }
+    50% { transform: translateY(-15px) rotate(5deg); }
+    100% { transform: translateY(0px) rotate(-5deg); }
+}
+
+@media (max-width: 500px) {
+    #cat-mascot {
+        top: -60px;
+        right: -20px;
+        width: 100px;
+    }
+}
