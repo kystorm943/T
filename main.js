@@ -7,9 +7,9 @@ const PIG = 'pig';
 const ASSETS = {
     cat: {
         infantry: { icon: 'cat_infantry.png', img: 'cat_infantry.png' },
-        cavalry: { icon: '🐱🐎', img: null },
+        cavalry: { icon: 'cat_cavalry.png', img: 'cat_cavalry.png' },
         artillery: { icon: 'cat_artillery.png', img: 'cat_artillery.png' },
-        musketeer: { icon: '🐱🧨', img: null }
+        musketeer: { icon: 'cat_musketeer.png', img: 'cat_musketeer.png' }
     },
     pig: {
         infantry: { icon: 'pig_infantry.png', img: 'pig_infantry.png' },
