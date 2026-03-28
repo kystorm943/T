@@ -417,6 +417,10 @@ function handleCellClick(x, y) {
     }
 
     if (clickedUnit && clickedUnit.faction === currentTurn && !clickedUnit.isDead) {
+        if (selectedUnit === clickedUnit) {
+            return;
+        }
+
         if (selectedUnit && selectedUnit !== clickedUnit) {
             if (hasMovedThisTurn || hasAttackedThisTurn) {
                 log("결정을 취소할 수 없습니다. 턴 종료를 눌러주세요.");
