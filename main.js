@@ -24,7 +24,7 @@ const UNIT_STATS = {
         infantry: { name: '보병', hp: 100, damage: 35, movement: 4 },
         cavalry: { name: '기병', hp: 100, damage: 25, movement: 5 },
         artillery: { name: '포병', hp: 100, damage: 55, movement: 3 },
-        musketeer: { name: '조총병', hp: 80, damage: 40, movement: 3 }
+        musketeer: { name: '조총병', hp: 80, damage: 50, movement: 3 }
     },
     pig: {
         infantry: { name: '보병', hp: 100, damage: 35, movement: 4 },
