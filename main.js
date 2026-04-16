@@ -30,7 +30,7 @@ const UNIT_STATS = {
         infantry: { name: '보병', hp: 100, damage: 35, movement: 4 },
         cavalry: { name: '기병', hp: 110, damage: 25, movement: 5 },
         artillery: { name: '포병', hp: 100, damage: 50, movement: 3 },
-        crossbowman: { name: '석궁수', hp: 85, damage: 40, movement: 3 }
+        crossbowman: { name: '석궁수', hp: 90, damage: 40, movement: 3 }
     }
 };
 
